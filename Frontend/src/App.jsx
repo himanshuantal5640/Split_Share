@@ -27,6 +27,9 @@ import Unauthorized from './pages/Unauthorized';
 import Anomalies from './pages/anomalies/Anomalies';
 import AnomalyDetails from './pages/anomalies/AnomalyDetails';
 import ResolutionReport from './pages/anomalies/ResolutionReport';
+import Balances from './pages/balances/Balances';
+import BalanceDetails from './pages/balances/BalanceDetails';
+import SettlementPlan from './pages/balances/SettlementPlan';
 
 
 function App() {
@@ -244,7 +247,27 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <ComingSoon />
+                  <Balances />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/balances/me"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <BalanceDetails />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/balances/:groupId/settlement-plan"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SettlementPlan />
                 </DashboardLayout>
               </ProtectedRoute>
             }
