@@ -147,6 +147,7 @@ model Settlement {
   amount          Decimal  @db.Decimal(10, 2)
   currency        Currency @default(USD)
   isCompleted     Boolean  @default(true) @map("is_completed")
+  isDeleted       Boolean  @default(false) @map("is_deleted")
   transactionDate DateTime @default(now()) @map("transaction_date")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
