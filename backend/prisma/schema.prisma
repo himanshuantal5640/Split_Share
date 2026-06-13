@@ -1,0 +1,213 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum MembershipStatus {
+  ACTIVE
+  LEFT
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+  INR
+  CAD
+  AUD
+}
+
+enum SplitType {
+  EQUAL
+  UNEQUAL
+  PERCENTAGE
+}
+
+enum ImportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AnomalyStatus {
+  UNRESOLVED
+  DISMISSED
+  RESOLVED
+}
+
+model User {
+  id                  Int               @id @default(autoincrement())
+  email               String            @unique
+  passwordHash        String            @map("password_hash")
+  name                String
+  avatarUrl           String?           @map("avatar_url")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  memberships         GroupMembership[]
+  paidExpenses        Expense[]         @relation("PaidExpenses")
+  expenseSplits       ExpenseSplit[]
+  sentSettlements     Settlement[]      @relation("SentSettlements")
+  receivedSettlements Settlement[]      @relation("ReceivedSettlements")
+  imports             Import[]
+
+  @@map("users")
+}
+
+model Group {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  memberships GroupMembership[]
+  expenses    Expense[]
+  settlements Settlement[]
+  imports     Import[]
+  anomalies   Anomaly[]
+
+  @@map("groups")
+}
+
+model GroupMembership {
+  id       Int              @id @default(autoincrement())
+  groupId  Int              @map("group_id")
+  userId   Int              @map("user_id")
+  status   MembershipStatus @default(ACTIVE)
+  joinedAt DateTime         @default(now()) @map("joined_at")
+  leftAt   DateTime?        @map("left_at")
+  group    Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_memberships")
+}
+
+model Expense {
+  id              Int            @id @default(autoincrement())
+  groupId         Int            @map("group_id")
+  paidById        Int            @map("paid_by_id")
+  importRowId     Int?           @unique @map("import_row_id")
+  amount          Decimal        @db.Decimal(10, 2)
+  currency        Currency       @default(USD)
+  description     String
+  category        String
+  splitType       SplitType      @map("split_type")
+  isDeleted       Boolean        @default(false) @map("is_deleted")
+  transactionDate DateTime       @default(now()) @map("transaction_date")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy          User           @relation("PaidExpenses", fields: [paidById], references: [id], onDelete: Restrict)
+  importRow       ImportRow?     @relation(fields: [importRowId], references: [id], onDelete: SetNull)
+  splits          ExpenseSplit[]
+  anomalies       Anomaly[]
+
+  @@index([groupId])
+  @@index([paidById])
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  id         Int      @id @default(autoincrement())
+  expenseId  Int      @map("expense_id")
+  userId     Int      @map("user_id")
+  amount     Decimal  @db.Decimal(10, 2)
+  percentage Decimal? @db.Decimal(5, 2)
+  share      Decimal? @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, userId])
+  @@index([expenseId])
+  @@index([userId])
+  @@map("expense_splits")
+}
+
+model Settlement {
+  id              Int      @id @default(autoincrement())
+  groupId         Int      @map("group_id")
+  payerId         Int      @map("payer_id")
+  payeeId         Int      @map("payee_id")
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        Currency @default(USD)
+  isCompleted     Boolean  @default(true) @map("is_completed")
+  transactionDate DateTime @default(now()) @map("transaction_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payer           User     @relation("SentSettlements", fields: [payerId], references: [id], onDelete: Restrict)
+  payee           User     @relation("ReceivedSettlements", fields: [payeeId], references: [id], onDelete: Restrict)
+
+  @@index([groupId])
+  @@index([payerId])
+  @@index([payeeId])
+  @@map("settlements")
+}
+
+model Import {
+  id                Int          @id @default(autoincrement())
+  userId            Int          @map("user_id")
+  groupId           Int          @map("group_id")
+  status            ImportStatus @default(PENDING)
+  originalFilename  String       @map("original_filename")
+  totalRows         Int          @default(0) @map("total_rows")
+  importedRowsCount Int          @default(0) @map("imported_rows_count")
+  failedRowsCount   Int          @default(0) @map("failed_rows_count")
+  errorLog          String?      @db.Text @map("error_log")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  group             Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  rows              ImportRow[]
+
+  @@index([userId])
+  @@index([groupId])
+  @@map("imports")
+}
+
+model ImportRow {
+  id               Int      @id @default(autoincrement())
+  importId         Int      @map("import_id")
+  rowNumber        Int      @map("row_number")
+  rawContent       String   @db.Text @map("raw_content")
+  isValid          Boolean  @map("is_valid")
+  validationErrors String?  @db.Text @map("validation_errors")
+  createdAt        DateTime @default(now()) @map("created_at")
+  import           Import   @relation(fields: [importId], references: [id], onDelete: Cascade)
+  expense          Expense?
+
+  @@index([importId])
+  @@map("import_rows")
+}
+
+model Anomaly {
+  id              Int             @id @default(autoincrement())
+  expenseId       Int             @map("expense_id")
+  groupId         Int             @map("group_id")
+  type            String
+  severity        AnomalySeverity @default(LOW)
+  description     String          @db.Text
+  status          AnomalyStatus   @default(UNRESOLVED)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  expense         Expense         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  group           Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+  @@index([groupId])
+  @@map("anomalies")
+}
