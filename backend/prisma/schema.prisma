@@ -192,6 +192,7 @@ model ImportRow {
   createdAt        DateTime @default(now()) @map("created_at")
   import           Import   @relation(fields: [importId], references: [id], onDelete: Cascade)
   expense          Expense?
+  anomalies        Anomaly[]
 
   @@index([importId])
   @@map("import_rows")
@@ -199,7 +200,8 @@ model ImportRow {
 
 model Anomaly {
   id              Int             @id @default(autoincrement())
-  expenseId       Int             @map("expense_id")
+  expenseId       Int?            @map("expense_id")
+  importRowId     Int?            @map("import_row_id")
   groupId         Int             @map("group_id")
   type            String
   severity        AnomalySeverity @default(LOW)
@@ -207,10 +209,12 @@ model Anomaly {
   status          AnomalyStatus   @default(UNRESOLVED)
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
-  expense         Expense         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense         Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  importRow       ImportRow?      @relation(fields: [importRowId], references: [id], onDelete: Cascade)
   group           Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([expenseId])
+  @@index([importRowId])
   @@index([groupId])
   @@map("anomalies")
 }
