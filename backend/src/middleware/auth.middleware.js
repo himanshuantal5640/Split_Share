@@ -1,7 +1,11 @@
 import { verifyToken } from '../utils/jwt.js';
+import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 
-export const requireAuth = (req, res, next) => {
+/**
+ * Middleware to protect routes by verifying JWT and confirming user exists in DB.
+ */
+export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -17,12 +21,23 @@ export const requireAuth = (req, res, next) => {
     try {
       const decoded = verifyToken(token);
       
-      // Attach user details to the request object
-      // Note: Full database user validation should be added in subsequent phases.
+      // Query the database to ensure the user still exists
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id }
+      });
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'The user belonging to this token no longer exists.'
+        });
+      }
+      
+      // Attach user details to the request object (excluding credentials)
       req.user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role
+        id: user.id,
+        email: user.email,
+        name: user.name
       };
       
       next();
