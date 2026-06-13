@@ -18,6 +18,9 @@ import EditExpense from './pages/expenses/EditExpense';
 import Settlements from './pages/settlements/Settlements';
 import CreateSettlement from './pages/settlements/CreateSettlement';
 import SettlementDetails from './pages/settlements/SettlementDetails';
+import Imports from './pages/imports/Imports';
+import UploadImport from './pages/imports/UploadImport';
+import ImportDetails from './pages/imports/ImportDetails';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
@@ -178,7 +181,27 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <ComingSoon />
+                  <Imports />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/imports/upload"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <UploadImport />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/imports/:importId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ImportDetails />
                 </DashboardLayout>
               </ProtectedRoute>
             }
