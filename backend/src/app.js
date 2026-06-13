@@ -16,6 +16,8 @@ import exchangeRateRouter from './routes/exchangeRate.routes.js';
 import balanceRouter from './routes/balance.routes.js';
 import debtRouter from './routes/debt.routes.js';
 import importProcessorRouter from './routes/importProcessor.routes.js';
+import reportRouter from './routes/report.routes.js';
+import systemRouter from './routes/system.routes.js';
 import notFound from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -40,6 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Mount routes
 app.use('/api', healthRouter);
+app.use('/api', systemRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/groups', groupRouter);
 app.use('/api/expenses', expenseRouter);
@@ -51,6 +54,7 @@ app.use('/api/exchange-rates', exchangeRateRouter);
 app.use('/api/balances', balanceRouter);
 app.use('/api', debtRouter);
 app.use('/api', importProcessorRouter);
+app.use('/api', reportRouter);
 
 
 // Catch 404 and forward to error handler
