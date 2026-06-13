@@ -355,7 +355,7 @@ export const analyzeImport = async (importId, userId) => {
         type: f.type,
         severity: f.severity,
         description: f.description,
-        status: 'UNRESOLVED'
+        status: 'PENDING'
       });
     });
   });

@@ -46,6 +46,9 @@ enum AnomalyStatus {
   UNRESOLVED
   DISMISSED
   RESOLVED
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -62,6 +65,7 @@ model User {
   sentSettlements     Settlement[]      @relation("SentSettlements")
   receivedSettlements Settlement[]      @relation("ReceivedSettlements")
   imports             Import[]
+  resolvedAnomalies   Anomaly[]         @relation("ResolvedAnomalies")
 
   @@map("users")
 }
@@ -206,15 +210,20 @@ model Anomaly {
   type            String
   severity        AnomalySeverity @default(LOW)
   description     String          @db.Text
-  status          AnomalyStatus   @default(UNRESOLVED)
+  status          AnomalyStatus   @default(PENDING) @map("status")
+  resolvedById    Int?            @map("resolved_by_id")
+  resolvedAt      DateTime?       @map("resolved_at")
+  resolutionNote  String?         @db.Text @map("resolution_note")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   expense         Expense?        @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   importRow       ImportRow?      @relation(fields: [importRowId], references: [id], onDelete: Cascade)
   group           Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  resolvedBy      User?           @relation("ResolvedAnomalies", fields: [resolvedById], references: [id], onDelete: Restrict)
 
   @@index([expenseId])
   @@index([importRowId])
   @@index([groupId])
+  @@index([resolvedById])
   @@map("anomalies")
 }
