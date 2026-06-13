@@ -5,7 +5,7 @@
  */
 export const validateCreateExpense = (body) => {
   const errors = {};
-  const { groupId, amount, description, category, splitType, paidById, splits } = body || {};
+  const { groupId, amount, description, category, splitType, paidById, splits, currency } = body || {};
 
   const gId = parseInt(groupId, 10);
   if (isNaN(gId) || gId <= 0) {
@@ -32,6 +32,13 @@ export const validateCreateExpense = (body) => {
 
   if (!splitType || !['EQUAL', 'UNEQUAL', 'PERCENTAGE'].includes(splitType)) {
     errors.splitType = 'Split type must be EQUAL, UNEQUAL, or PERCENTAGE.';
+  }
+
+  if (currency) {
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'];
+    if (!validCurrencies.includes(currency.toUpperCase())) {
+      errors.currency = `Currency must be one of: ${validCurrencies.join(', ')}.`;
+    }
   }
 
   if (!Array.isArray(splits) || splits.length === 0) {
@@ -71,7 +78,7 @@ export const validateCreateExpense = (body) => {
  */
 export const validateUpdateExpense = (body) => {
   const errors = {};
-  const { amount, description, category, splitType, paidById, splits } = body || {};
+  const { amount, description, category, splitType, paidById, splits, currency } = body || {};
 
   if (amount !== undefined) {
     const amt = parseFloat(amount);
@@ -102,6 +109,13 @@ export const validateUpdateExpense = (body) => {
   if (splitType !== undefined) {
     if (!['EQUAL', 'UNEQUAL', 'PERCENTAGE'].includes(splitType)) {
       errors.splitType = 'Split type must be EQUAL, UNEQUAL, or PERCENTAGE.';
+    }
+  }
+
+  if (currency !== undefined) {
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'];
+    if (!currency || !validCurrencies.includes(currency.toUpperCase())) {
+      errors.currency = `Currency must be one of: ${validCurrencies.join(', ')}.`;
     }
   }
 

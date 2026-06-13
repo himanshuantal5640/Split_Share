@@ -74,6 +74,12 @@ export const ANOMALY_TYPES = {
     severity: 'LOW',
     message: 'The amount contains more than 2 decimal places.',
     suggestedAction: 'Round the amount to exactly 2 decimal places.'
+  },
+  MISSING_EXCHANGE_RATE: {
+    type: 'MISSING_EXCHANGE_RATE',
+    severity: 'HIGH',
+    message: 'No historical exchange rate exists for this currency on or before the transaction date.',
+    suggestedAction: 'Please add a valid historical exchange rate for this date and currency.'
   }
 };
 

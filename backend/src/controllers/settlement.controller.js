@@ -23,6 +23,10 @@ const formatSettlement = (s) => {
     isDeleted: rest.isDeleted,
     createdAt: rest.createdAt,
     updatedAt: rest.updatedAt,
+    originalAmount: rest.originalAmount,
+    originalCurrency: rest.originalCurrency,
+    exchangeRate: rest.exchangeRate,
+    normalizedAmount: rest.normalizedAmount,
     payer: rest.payer || null,
     receiver: payee || null,
     settledAt: transactionDate

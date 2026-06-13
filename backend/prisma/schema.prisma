@@ -115,6 +115,10 @@ model Expense {
   transactionDate DateTime       @default(now()) @map("transaction_date")
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
+  originalAmount   Decimal?       @db.Decimal(10, 2) @map("original_amount")
+  originalCurrency Currency?      @map("original_currency")
+  exchangeRate     Decimal?       @db.Decimal(10, 6) @map("exchange_rate")
+  normalizedAmount Decimal?       @db.Decimal(10, 2) @map("normalized_amount")
   group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   paidBy          User           @relation("PaidExpenses", fields: [paidById], references: [id], onDelete: Restrict)
   importRow       ImportRow?     @relation(fields: [importRowId], references: [id], onDelete: SetNull)
@@ -155,6 +159,10 @@ model Settlement {
   transactionDate DateTime @default(now()) @map("transaction_date")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  originalAmount   Decimal? @db.Decimal(10, 2) @map("original_amount")
+  originalCurrency Currency? @map("original_currency")
+  exchangeRate     Decimal? @db.Decimal(10, 6) @map("exchange_rate")
+  normalizedAmount Decimal? @db.Decimal(10, 2) @map("normalized_amount")
   group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer           User     @relation("SentSettlements", fields: [payerId], references: [id], onDelete: Restrict)
   payee           User     @relation("ReceivedSettlements", fields: [payeeId], references: [id], onDelete: Restrict)
@@ -226,4 +234,17 @@ model Anomaly {
   @@index([groupId])
   @@index([resolvedById])
   @@map("anomalies")
+}
+
+model ExchangeRate {
+  id            Int          @id @default(autoincrement())
+  fromCurrency  Currency     @map("from_currency")
+  toCurrency    Currency     @map("to_currency")
+  rate          Decimal      @db.Decimal(10, 6)
+  effectiveDate DateTime     @map("effective_date")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@unique([fromCurrency, toCurrency, effectiveDate])
+  @@map("exchange_rates")
 }

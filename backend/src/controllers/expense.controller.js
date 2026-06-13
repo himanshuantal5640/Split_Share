@@ -18,7 +18,7 @@ const parseIdParam = (paramName, paramVal) => {
  * Create a new expense.
  */
 export const create = catchAsync(async (req, res) => {
-  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate } = req.body;
+  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate, currency } = req.body;
 
   const expense = await expenseService.createExpense({
     groupId: parseInt(groupId, 10),
@@ -28,7 +28,8 @@ export const create = catchAsync(async (req, res) => {
     category,
     splitType,
     splits,
-    transactionDate
+    transactionDate,
+    currency
   });
 
   res.status(201).json({

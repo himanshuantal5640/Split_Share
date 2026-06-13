@@ -12,6 +12,7 @@ import settlementRouter from './routes/settlement.routes.js';
 import importRouter from './routes/import.routes.js';
 import anomalyRouter from './routes/anomaly.routes.js';
 import resolutionRouter from './routes/resolution.routes.js';
+import exchangeRateRouter from './routes/exchangeRate.routes.js';
 import notFound from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -43,6 +44,7 @@ app.use('/api/settlements', settlementRouter);
 app.use('/api/imports', importRouter);
 app.use('/api', resolutionRouter);
 app.use('/api', anomalyRouter);
+app.use('/api/exchange-rates', exchangeRateRouter);
 
 
 // Catch 404 and forward to error handler

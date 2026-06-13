@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../utils/errors.js';
+import { getEffectiveRate } from './exchangeRate.service.js';
 
 /**
  * Validates whether a user was an active member of a group on a specific date.
@@ -129,7 +130,7 @@ const calculateSplits = (totalAmount, splitType, splits) => {
  * Create an expense and splits.
  */
 export const createExpense = async (payload) => {
-  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate } = payload;
+  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate, currency } = payload;
   const expenseDate = transactionDate ? new Date(transactionDate) : new Date();
 
   // 1. Verify group exists
@@ -149,21 +150,35 @@ export const createExpense = async (payload) => {
     await validateMemberOnDate(groupId, pId, expenseDate);
   }
 
-  // 4. Calculate precise decimal shares
+  // 4. Resolve exchange rate to INR
+  const expenseCurrency = currency ? currency.toUpperCase() : 'USD';
+  const rate = await getEffectiveRate(expenseCurrency, 'INR', expenseDate);
+  if (!rate) {
+    throw new AppError(`No exchange rate found from ${expenseCurrency} to INR on or before ${expenseDate.toISOString().split('T')[0]}.`, 400);
+  }
+
+  // 5. Calculate precise decimal shares
   const totalAmount = new Prisma.Decimal(amount);
+  const decimalRate = new Prisma.Decimal(rate);
+  const normalizedAmount = totalAmount.mul(decimalRate).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
   const calculatedSplits = calculateSplits(totalAmount, splitType, splits);
 
-  // 5. Execute creation transaction
+  // 6. Execute creation transaction
   return await prisma.$transaction(async (tx) => {
     const expense = await tx.expense.create({
       data: {
         groupId,
         paidById,
         amount: totalAmount,
+        currency: expenseCurrency,
         description,
         category,
         splitType,
-        transactionDate: expenseDate
+        transactionDate: expenseDate,
+        originalAmount: totalAmount,
+        originalCurrency: expenseCurrency,
+        exchangeRate: decimalRate,
+        normalizedAmount
       }
     });
 
@@ -203,6 +218,7 @@ export const updateExpense = async (expenseId, payload) => {
 
   const groupId = existingExpense.groupId;
   const amount = payload.amount !== undefined ? payload.amount : existingExpense.amount;
+  const currency = payload.currency !== undefined ? payload.currency.toUpperCase() : existingExpense.currency;
   const paidById = payload.paidById !== undefined ? payload.paidById : existingExpense.paidById;
   const splitType = payload.splitType !== undefined ? payload.splitType : existingExpense.splitType;
   const description = payload.description !== undefined ? payload.description : existingExpense.description;
@@ -212,6 +228,16 @@ export const updateExpense = async (expenseId, payload) => {
   // 2. Validate Payer membership
   await validateMemberOnDate(groupId, paidById, expenseDate);
 
+  // 3. Resolve exchange rate to INR
+  const rate = await getEffectiveRate(currency, 'INR', expenseDate);
+  if (!rate) {
+    throw new AppError(`No exchange rate found from ${currency} to INR on or before ${expenseDate.toISOString().split('T')[0]}.`, 400);
+  }
+
+  const totalAmount = new Prisma.Decimal(amount);
+  const decimalRate = new Prisma.Decimal(rate);
+  const normalizedAmount = totalAmount.mul(decimalRate).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+
   let calculatedSplits = [];
   if (payload.splits) {
     // Validate custom input split list
@@ -219,7 +245,7 @@ export const updateExpense = async (expenseId, payload) => {
     for (const pId of participantIds) {
       await validateMemberOnDate(groupId, pId, expenseDate);
     }
-    calculatedSplits = calculateSplits(new Prisma.Decimal(amount), splitType, payload.splits);
+    calculatedSplits = calculateSplits(totalAmount, splitType, payload.splits);
   } else {
     // If splits list is not provided, fetch old participants and recalculate splits based on new amount/type
     const oldSplits = await prisma.expenseSplit.findMany({
@@ -244,20 +270,25 @@ export const updateExpense = async (expenseId, payload) => {
       await validateMemberOnDate(groupId, s.userId, expenseDate);
     }
 
-    calculatedSplits = calculateSplits(new Prisma.Decimal(amount), splitType, remappedSplits);
+    calculatedSplits = calculateSplits(totalAmount, splitType, remappedSplits);
   }
 
-  // 3. Save updates atomically
+  // 4. Save updates atomically
   return await prisma.$transaction(async (tx) => {
     const updatedExpense = await tx.expense.update({
       where: { id: expenseId },
       data: {
         paidById,
-        amount: new Prisma.Decimal(amount),
+        amount: totalAmount,
+        currency,
         description,
         category,
         splitType,
-        transactionDate: expenseDate
+        transactionDate: expenseDate,
+        originalAmount: totalAmount,
+        originalCurrency: currency,
+        exchangeRate: decimalRate,
+        normalizedAmount
       }
     });
 

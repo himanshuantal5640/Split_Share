@@ -39,7 +39,7 @@ const parseSplitNumbers = (detailStr) => {
  * Runs the 12 detectors on a single import row.
  * Returns an array of anomaly definitions to be inserted.
  */
-const runDetectors = (row, index, group, allUsers, groupMemberships, siblingRows, existingExpenses) => {
+const runDetectors = (row, index, group, allUsers, groupMemberships, siblingRows, existingExpenses, allExchangeRates) => {
   const anomalies = [];
 
   // 1. Extract values using key normalizer
@@ -188,6 +188,24 @@ const runDetectors = (row, index, group, allUsers, groupMemberships, siblingRows
     }
   }
 
+  // MISSING_EXCHANGE_RATE detector
+  const rowCurrency = currencyStr ? currencyStr.toString().trim().toUpperCase() : 'USD';
+  if (rowCurrency !== 'INR' && Array.isArray(allExchangeRates)) {
+    const checkTime = parsedDate ? parsedDate.getTime() : new Date().getTime();
+    const rateRecord = allExchangeRates.find(r => 
+      r.fromCurrency === rowCurrency &&
+      r.toCurrency === 'INR' &&
+      new Date(r.effectiveDate).getTime() <= checkTime
+    );
+    if (!rateRecord) {
+      anomalies.push({
+        type: 'MISSING_EXCHANGE_RATE',
+        severity: ANOMALY_TYPES.MISSING_EXCHANGE_RATE.severity,
+        description: `Row #${index + 1}: No exchange rate found from ${rowCurrency} to INR on or before ${dateStr || 'the transaction date'}.`
+      });
+    }
+  }
+
   // 10. INVALID_PERCENTAGE_SPLIT detector
   const cleanSplitType = splitTypeStr ? splitTypeStr.toString().trim().toUpperCase() : 'EQUAL';
   if (cleanSplitType === 'PERCENTAGE') {
@@ -313,6 +331,11 @@ export const analyzeImport = async (importId, userId) => {
   const existingExpenses = await prisma.expense.findMany({
     where: { groupId, isDeleted: false }
   });
+  const allExchangeRates = await prisma.exchangeRate.findMany({
+    orderBy: {
+      effectiveDate: 'desc'
+    }
+  });
 
   // 4. Delete old anomalies for this import's rows to allow re-analysis
   const rowIds = importRecord.rows.map(r => r.id);
@@ -345,7 +368,8 @@ export const analyzeImport = async (importId, userId) => {
       allUsers,
       groupMemberships,
       parsedSiblingRows,
-      existingExpenses
+      existingExpenses,
+      allExchangeRates
     );
 
     findings.forEach(f => {

@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../utils/errors.js';
+import { getEffectiveRate } from './exchangeRate.service.js';
 
 /**
  * Validates whether a user was an active member of a group on a specific date.
@@ -58,8 +59,17 @@ export const createSettlement = async (payload) => {
   await validateMemberOnDate(groupId, payerId, settlementDate);
   await validateMemberOnDate(groupId, receiverId, settlementDate);
 
-  // 3. Create settlement in the database
+  // 3. Resolve exchange rate to INR
+  const settlementCurrency = currency ? currency.toUpperCase() : 'USD';
+  const rate = await getEffectiveRate(settlementCurrency, 'INR', settlementDate);
+  if (!rate) {
+    throw new AppError(`No exchange rate found from ${settlementCurrency} to INR on or before ${settlementDate.toISOString().split('T')[0]}.`, 400);
+  }
+
+  // 4. Create settlement in the database
   const totalAmount = new Prisma.Decimal(amount);
+  const decimalRate = new Prisma.Decimal(rate);
+  const normalizedAmount = totalAmount.mul(decimalRate).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 
   return await prisma.settlement.create({
     data: {
@@ -67,10 +77,14 @@ export const createSettlement = async (payload) => {
       payerId,
       payeeId: receiverId, // maps receiverId to payeeId in Prisma Schema
       amount: totalAmount,
-      currency: currency || 'USD',
+      currency: settlementCurrency,
       transactionDate: settlementDate,
       isCompleted: true,
-      isDeleted: false
+      isDeleted: false,
+      originalAmount: totalAmount,
+      originalCurrency: settlementCurrency,
+      exchangeRate: decimalRate,
+      normalizedAmount
     },
     include: {
       payer: {
