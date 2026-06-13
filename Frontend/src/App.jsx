@@ -11,6 +11,10 @@ import Dashboard from './pages/Dashboard';
 import Groups from './pages/groups/Groups';
 import CreateGroup from './pages/groups/CreateGroup';
 import GroupDetails from './pages/groups/GroupDetails';
+import Expenses from './pages/expenses/Expenses';
+import CreateExpense from './pages/expenses/CreateExpense';
+import ExpenseDetails from './pages/expenses/ExpenseDetails';
+import EditExpense from './pages/expenses/EditExpense';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
@@ -101,7 +105,37 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <ComingSoon />
+                  <Expenses />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses/create"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CreateExpense />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses/:expenseId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ExpenseDetails />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses/:expenseId/edit"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <EditExpense />
                 </DashboardLayout>
               </ProtectedRoute>
             }
