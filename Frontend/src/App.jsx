@@ -24,6 +24,9 @@ import ImportDetails from './pages/imports/ImportDetails';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+import Anomalies from './pages/anomalies/Anomalies';
+import AnomalyDetails from './pages/anomalies/AnomalyDetails';
+import ResolutionReport from './pages/anomalies/ResolutionReport';
 
 
 function App() {
@@ -202,6 +205,36 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <ImportDetails />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/anomalies"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Anomalies />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/anomalies/:anomalyId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AnomalyDetails />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/imports/:importId/resolution-report"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ResolutionReport />
                 </DashboardLayout>
               </ProtectedRoute>
             }

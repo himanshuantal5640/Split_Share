@@ -4,18 +4,42 @@ import PageHeader from '../../components/layout/PageHeader';
 import ImportStatusBadge from '../../components/imports/ImportStatusBadge';
 import ImportRowsTable from '../../components/imports/ImportRowsTable';
 import { useImports } from '../../hooks/useImports';
+import { useAnomalies } from '../../hooks/useAnomalies';
 
 const ImportDetails = () => {
   const { importId } = useParams();
   const { fetchImportDetails, loading, error } = useImports();
+  const { fetchImportAnomalies, analyzeImport, loading: anomalyLoading } = useAnomalies();
   const [importData, setImportData] = useState(null);
+  const [anomaliesList, setAnomaliesList] = useState([]);
+
+  const loadAnomalies = async () => {
+    try {
+      const data = await fetchImportAnomalies(parseInt(importId, 10));
+      setAnomaliesList(data || []);
+    } catch (err) {
+      console.error('Failed to load anomalies for import', err);
+    }
+  };
 
   const loadDetails = async () => {
     try {
       const data = await fetchImportDetails(parseInt(importId, 10));
       setImportData(data);
+      if (data && data.status === 'COMPLETED') {
+        loadAnomalies();
+      }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    try {
+      await analyzeImport(parseInt(importId, 10));
+      loadDetails();
+    } catch (err) {
+      console.error('Failed to analyze anomalies', err);
     }
   };
 
@@ -125,6 +149,54 @@ const ImportDetails = () => {
             System Failure Exception Log:
           </span>
           <p className="font-mono text-xs">{importData.errorLog}</p>
+        </div>
+      )}
+
+      {/* Anomaly Audit Panel */}
+      {importData.status === 'COMPLETED' && (
+        <div className="p-6 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Anomaly Detection & Audit Override
+            </h3>
+            <p className="text-xs text-slate-450 max-w-2xl leading-relaxed">
+              {anomaliesList.length > 0
+                ? `The audit engine identified ${anomaliesList.length} anomalies in this import. Outstanding pending flags must be overridden or skipped before the import ledger can be generated.`
+                : 'Run the background audit detector to identify double entries, currency conflicts, ex-member actions, or invalid percentage splits.'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {anomaliesList.length > 0 ? (
+              <>
+                <Link
+                  to={`/imports/${importId}/resolution-report`}
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-white transition-colors"
+                >
+                  Resolution Report
+                </Link>
+                {anomaliesList.some(a => a.status === 'PENDING') && (
+                  <Link
+                    to="/anomalies"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/10 transition-colors"
+                  >
+                    Review Queue
+                  </Link>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={handleAnalyze}
+                disabled={anomalyLoading}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-500/50 text-white shadow-lg shadow-indigo-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                {anomalyLoading ? 'Analyzing...' : 'Run Analysis'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
