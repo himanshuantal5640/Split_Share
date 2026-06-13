@@ -9,6 +9,7 @@ import authRouter from './routes/auth.routes.js';
 import groupRouter from './routes/group.routes.js';
 import expenseRouter from './routes/expense.routes.js';
 import settlementRouter from './routes/settlement.routes.js';
+import importRouter from './routes/import.routes.js';
 import notFound from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -37,6 +38,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/groups', groupRouter);
 app.use('/api/expenses', expenseRouter);
 app.use('/api/settlements', settlementRouter);
+app.use('/api/imports', importRouter);
 
 
 // Catch 404 and forward to error handler
