@@ -119,14 +119,17 @@ model Expense {
   originalCurrency Currency?      @map("original_currency")
   exchangeRate     Decimal?       @db.Decimal(10, 6) @map("exchange_rate")
   normalizedAmount Decimal?       @db.Decimal(10, 2) @map("normalized_amount")
+  importId         Int?           @map("import_id")
   group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   paidBy          User           @relation("PaidExpenses", fields: [paidById], references: [id], onDelete: Restrict)
   importRow       ImportRow?     @relation(fields: [importRowId], references: [id], onDelete: SetNull)
+  import          Import?        @relation(fields: [importId], references: [id], onDelete: SetNull)
   splits          ExpenseSplit[]
   anomalies       Anomaly[]
 
   @@index([groupId])
   @@index([paidById])
+  @@index([importId])
   @@map("expenses")
 }
 
@@ -163,13 +166,18 @@ model Settlement {
   originalCurrency Currency? @map("original_currency")
   exchangeRate     Decimal? @db.Decimal(10, 6) @map("exchange_rate")
   normalizedAmount Decimal? @db.Decimal(10, 2) @map("normalized_amount")
+  importId         Int?      @map("import_id")
+  importRowId      Int?      @unique @map("import_row_id")
   group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer           User     @relation("SentSettlements", fields: [payerId], references: [id], onDelete: Restrict)
   payee           User     @relation("ReceivedSettlements", fields: [payeeId], references: [id], onDelete: Restrict)
+  import          Import?    @relation(fields: [importId], references: [id], onDelete: SetNull)
+  importRow       ImportRow? @relation(fields: [importRowId], references: [id], onDelete: SetNull)
 
   @@index([groupId])
   @@index([payerId])
   @@index([payeeId])
+  @@index([importId])
   @@map("settlements")
 }
 
@@ -188,6 +196,8 @@ model Import {
   user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   group             Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   rows              ImportRow[]
+  expenses          Expense[]
+  settlements       Settlement[]
 
   @@index([userId])
   @@index([groupId])
@@ -204,6 +214,7 @@ model ImportRow {
   createdAt        DateTime @default(now()) @map("created_at")
   import           Import   @relation(fields: [importId], references: [id], onDelete: Cascade)
   expense          Expense?
+  settlement       Settlement?
   anomalies        Anomaly[]
 
   @@index([importId])

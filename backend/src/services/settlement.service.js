@@ -44,7 +44,7 @@ const validateMemberOnDate = async (groupId, userId, date) => {
  * @returns {object} The created settlement
  */
 export const createSettlement = async (payload) => {
-  const { groupId, payerId, receiverId, amount, transactionDate, currency } = payload;
+  const { groupId, payerId, receiverId, amount, transactionDate, currency, importId, importRowId } = payload;
   const settlementDate = transactionDate ? new Date(transactionDate) : new Date();
 
   // 1. Verify group exists
@@ -84,7 +84,9 @@ export const createSettlement = async (payload) => {
       originalAmount: totalAmount,
       originalCurrency: settlementCurrency,
       exchangeRate: decimalRate,
-      normalizedAmount
+      normalizedAmount,
+      importId,
+      importRowId
     },
     include: {
       payer: {

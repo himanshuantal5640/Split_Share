@@ -130,7 +130,7 @@ const calculateSplits = (totalAmount, splitType, splits) => {
  * Create an expense and splits.
  */
 export const createExpense = async (payload) => {
-  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate, currency } = payload;
+  const { groupId, amount, description, category, splitType, paidById, splits, transactionDate, currency, importId, importRowId } = payload;
   const expenseDate = transactionDate ? new Date(transactionDate) : new Date();
 
   // 1. Verify group exists
@@ -178,7 +178,9 @@ export const createExpense = async (payload) => {
         originalAmount: totalAmount,
         originalCurrency: expenseCurrency,
         exchangeRate: decimalRate,
-        normalizedAmount
+        normalizedAmount,
+        importId,
+        importRowId
       }
     });
 

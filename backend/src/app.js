@@ -15,6 +15,7 @@ import resolutionRouter from './routes/resolution.routes.js';
 import exchangeRateRouter from './routes/exchangeRate.routes.js';
 import balanceRouter from './routes/balance.routes.js';
 import debtRouter from './routes/debt.routes.js';
+import importProcessorRouter from './routes/importProcessor.routes.js';
 import notFound from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -49,6 +50,7 @@ app.use('/api', anomalyRouter);
 app.use('/api/exchange-rates', exchangeRateRouter);
 app.use('/api/balances', balanceRouter);
 app.use('/api', debtRouter);
+app.use('/api', importProcessorRouter);
 
 
 // Catch 404 and forward to error handler
