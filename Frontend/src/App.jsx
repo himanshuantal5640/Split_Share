@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 
@@ -49,14 +51,74 @@ function App() {
             }
           />
 
-          {/* Protected Routes wrapped under ProtectedRoute and MainLayout */}
+          {/* Protected Routes wrapped under ProtectedRoute and DashboardLayout */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <MainLayout>
+                <DashboardLayout>
                   <Dashboard />
-                </MainLayout>
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settlements"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/imports"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/balances"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ComingSoon />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
@@ -77,5 +139,6 @@ function App() {
 }
 
 export default App;
+
 
 
