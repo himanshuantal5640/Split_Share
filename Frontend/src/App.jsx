@@ -30,6 +30,10 @@ import ResolutionReport from './pages/anomalies/ResolutionReport';
 import Balances from './pages/balances/Balances';
 import BalanceDetails from './pages/balances/BalanceDetails';
 import SettlementPlan from './pages/balances/SettlementPlan';
+import Reports from './pages/reports/Reports';
+import ImportReport from './pages/reports/ImportReport';
+import AuditReport from './pages/reports/AuditReport';
+import SystemHealth from './pages/reports/SystemHealth';
 
 
 function App() {
@@ -277,7 +281,37 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <ComingSoon />
+                  <Reports />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/import/:importId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ImportReport />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/audit/:importId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AuditReport />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/health"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SystemHealth />
                 </DashboardLayout>
               </ProtectedRoute>
             }
