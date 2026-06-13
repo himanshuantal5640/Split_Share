@@ -7,6 +7,7 @@ import env from './config/env.js';
 import healthRouter from './routes/health.routes.js';
 import authRouter from './routes/auth.routes.js';
 import groupRouter from './routes/group.routes.js';
+import expenseRouter from './routes/expense.routes.js';
 import notFound from './middleware/notFound.middleware.js';
 import errorHandler from './middleware/error.middleware.js';
 
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/groups', groupRouter);
+app.use('/api/expenses', expenseRouter);
 
 
 // Catch 404 and forward to error handler
