@@ -45,11 +45,19 @@ export const getAllGroups = async (userId) => {
         }
       }
     },
+    include: {
+      memberships: {
+        where: {
+          status: 'ACTIVE'
+        }
+      }
+    },
     orderBy: {
       createdAt: 'desc'
     }
   });
 };
+
 
 /**
  * Retrieves group info, separating active members and former membership log history.

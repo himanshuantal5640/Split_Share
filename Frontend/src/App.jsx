@@ -8,9 +8,13 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Groups from './pages/groups/Groups';
+import CreateGroup from './pages/groups/CreateGroup';
+import GroupDetails from './pages/groups/GroupDetails';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
+
 
 function App() {
   return (
@@ -67,7 +71,27 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <ComingSoon />
+                  <Groups />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/create"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CreateGroup />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:groupId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <GroupDetails />
                 </DashboardLayout>
               </ProtectedRoute>
             }
