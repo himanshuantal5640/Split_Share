@@ -19,21 +19,44 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user credentials from localStorage on startup
+  // Helper to fetch current user profile from the server
+  const getCurrentUser = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data && res.data.success) {
+        const userData = res.data.data.user;
+        setUser(userData);
+        localStorage.setItem('spit_expense_user', JSON.stringify(userData));
+        return userData;
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      // Clean up session if backend returns unauthorized (e.g. token expired)
+      if (error.response && error.response.status === 401) {
+        logout();
+      }
+      throw error;
+    }
+  };
+
+  // Load user credentials from localStorage and restore session on startup
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
         const storedToken = localStorage.getItem('spit_expense_token');
         const storedUser = localStorage.getItem('spit_expense_user');
 
-        if (storedToken && storedUser) {
+        if (storedToken) {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+          // Fetch fresh user data from API to confirm session is valid
+          await getCurrentUser();
         }
       } catch (err) {
         console.error('Failed to restore auth session:', err);
-        localStorage.removeItem('spit_expense_token');
-        localStorage.removeItem('spit_expense_user');
+        logout();
       } finally {
         setLoading(false);
       }
@@ -42,23 +65,21 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Login action skeleton
+  // Login action
   const login = async (email, password) => {
     setLoading(true);
     try {
-      // Mock login validation / endpoint simulation
-      // In subsequent phases, this will hit: const res = await api.post('/auth/login', { email, password });
-      console.log('Logging in user:', email);
-      
-      const mockUser = { id: 1, email, name: email.split('@')[0] };
-      const mockToken = 'mock_jwt_token_' + Date.now();
+      const res = await api.post('/auth/login', { email, password });
+      if (res.data && res.data.success) {
+        const { user: userData, token: userToken } = res.data.data;
 
-      localStorage.setItem('spit_expense_token', mockToken);
-      localStorage.setItem('spit_expense_user', JSON.stringify(mockUser));
+        localStorage.setItem('spit_expense_token', userToken);
+        localStorage.setItem('spit_expense_user', JSON.stringify(userData));
 
-      setToken(mockToken);
-      setUser(mockUser);
-      return { success: true };
+        setToken(userToken);
+        setUser(userData);
+        return { success: true, user: userData };
+      }
     } catch (error) {
       console.error('Login action error:', error);
       throw error;
@@ -67,23 +88,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register action skeleton
+  // Register action
   const register = async (name, email, password) => {
     setLoading(true);
     try {
-      // Mock registration
-      // In subsequent phases, this will hit: const res = await api.post('/auth/register', { name, email, password });
-      console.log('Registering user:', name, email);
-      
-      const mockUser = { id: 1, email, name };
-      const mockToken = 'mock_jwt_token_' + Date.now();
-
-      localStorage.setItem('spit_expense_token', mockToken);
-      localStorage.setItem('spit_expense_user', JSON.stringify(mockUser));
-
-      setToken(mockToken);
-      setUser(mockUser);
-      return { success: true };
+      const res = await api.post('/auth/register', { name, email, password });
+      if (res.data && res.data.success) {
+        // Automatically sign in the user after a successful signup
+        return await login(email, password);
+      }
     } catch (error) {
       console.error('Registration action error:', error);
       throw error;
@@ -109,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    getCurrentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

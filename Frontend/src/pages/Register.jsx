@@ -1,42 +1,45 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import RegisterForm from '../components/auth/RegisterForm';
 
 const Register = () => {
-  const { register } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const handleSimulateRegister = async () => {
-    try {
-      await register('New User', 'newuser@spitexpense.com', 'password');
+  // Redirect authenticated users away from registration
+  useEffect(() => {
+    if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
-    } catch (err) {
-      console.error(err);
     }
-  };
+  }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="max-w-md w-full p-8 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-md shadow-2xl flex flex-col items-center text-center gap-6">
-        <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-        </div>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 relative">
+      {/* Ambient backgrounds for signup card */}
+      <div className="absolute w-[350px] h-[350px] bg-violet-500/10 rounded-full blur-[110px] -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-white">Register Account</h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            This page represents the registration gateway. Since forms are deferred, you can create a test user profile below.
+      <div className="max-w-lg w-full p-8 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-md shadow-2xl flex flex-col gap-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">
+            Register Account
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Create a profile and start splitting expenses with your group.
           </p>
         </div>
 
-        <button
-          onClick={handleSimulateRegister}
-          className="w-full py-3 px-6 rounded-xl font-medium bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/15 hover:shadow-indigo-500/25 transition-all duration-300 cursor-pointer"
-        >
-          Generate Profile & Sign In
-        </button>
+        <RegisterForm />
+
+        <div className="text-center text-sm border-t border-slate-900 pt-4 mt-2">
+          <span className="text-slate-400">Already registered? </span>
+          <Link
+            to="/login"
+            className="text-indigo-400 font-semibold hover:text-indigo-350 transition-colors"
+          >
+            Sign In Here
+          </Link>
+        </div>
       </div>
     </div>
   );

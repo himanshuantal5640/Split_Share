@@ -1,45 +1,45 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoginForm from '../components/auth/LoginForm';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
-
-  const handleSimulateLogin = async () => {
-    try {
-      await login('tester@spitexpense.com', 'password');
-      navigate(from, { replace: true });
-    } catch (err) {
-      console.error(err);
+  // Redirect authenticated users away from login
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
     }
-  };
+  }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="max-w-md w-full p-8 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-md shadow-2xl flex flex-col items-center text-center gap-6">
-        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-          </svg>
-        </div>
+    <div className="min-h-[70vh] flex items-center justify-center px-4 relative">
+      {/* Dynamic Background Blurs specifically for Login card */}
+      <div className="absolute w-[350px] h-[350px] bg-indigo-500/10 rounded-full blur-[110px] -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-white">Sign In Gateway</h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            This page represents the login portal. Since full forms are not implemented yet, you can trigger a simulated session.
+      <div className="max-w-md w-full p-8 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-md shadow-2xl flex flex-col gap-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-white tracking-tight">
+            Sign In Portal
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Access your shared expense metrics and calculations.
           </p>
         </div>
 
-        <button
-          onClick={handleSimulateLogin}
-          className="w-full py-3 px-6 rounded-xl font-medium bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/15 hover:shadow-indigo-500/25 transition-all duration-300 cursor-pointer"
-        >
-          Simulate Authentication Session
-        </button>
+        <LoginForm />
+
+        <div className="text-center text-sm border-t border-slate-900 pt-4 mt-2">
+          <span className="text-slate-400">New to SpitExpense? </span>
+          <Link
+            to="/register"
+            className="text-indigo-400 font-semibold hover:text-indigo-350 transition-colors"
+          >
+            Create an Account
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
 
 function App() {
   return (
@@ -36,6 +37,14 @@ function App() {
             element={
               <MainLayout>
                 <Register />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/unauthorized"
+            element={
+              <MainLayout>
+                <Unauthorized />
               </MainLayout>
             }
           />
@@ -68,4 +77,5 @@ function App() {
 }
 
 export default App;
+
 
