@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const SettlementTable = ({ settlements = [], onDeleteClick, currentUserId }) => {
+const SettlementTable = ({ settlements = [], onDeleteClick, onSettleClick, currentUserId }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString(undefined, {
       dateStyle: 'medium',
@@ -76,6 +76,14 @@ const SettlementTable = ({ settlements = [], onDeleteClick, currentUserId }) => 
                   <td className="px-6 py-4 text-slate-450">{formatDate(settlement.transactionDate)}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2.5">
+                      {settlement.id >= 1000000 && (
+                        <button
+                          onClick={() => onSettleClick(settlement)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                        >
+                          Settle
+                        </button>
+                      )}
                       <Link
                         to={`/settlements/${settlement.id}`}
                         className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-800 hover:border-slate-700 text-indigo-400 hover:bg-slate-900/40 transition-all cursor-pointer"

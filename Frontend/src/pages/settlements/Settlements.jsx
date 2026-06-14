@@ -26,6 +26,7 @@ const Settlements = () => {
     loading: loadingSettlements,
     error: settlementError,
     fetchGroupSettlements,
+    addSettlement,
     removeSettlement,
   } = useSettlements();
 
@@ -65,6 +66,25 @@ const Settlements = () => {
       setSearchParams({ groupId: val });
     } else {
       setSearchParams({});
+    }
+  };
+
+  const handleSettleClick = async (settlement) => {
+    try {
+      await addSettlement({
+        groupId: settlement.groupId,
+        payerId: settlement.payerId,
+        receiverId: settlement.payeeId, // Note: backend expects receiverId
+        amount: settlement.amount,
+        currency: settlement.currency,
+        transactionDate: new Date().toISOString()
+      });
+      // Refresh current group settlements list
+      if (selectedGroupId) {
+        await fetchGroupSettlements(parseInt(selectedGroupId, 10));
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -149,7 +169,7 @@ const Settlements = () => {
             🤝
           </div>
           <h3 className="text-base font-bold text-slate-200">No Recorded Settlements</h3>
-          <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+          <p className="text-xs text-slate-405 max-w-xs leading-relaxed">
             No active repayment settlement entries exist for this group. Click the button above to record your first settlement.
           </p>
         </div>
@@ -158,6 +178,7 @@ const Settlements = () => {
           <SettlementTable
             settlements={settlements}
             onDeleteClick={handleDeleteClick}
+            onSettleClick={handleSettleClick}
             currentUserId={user?.id}
           />
         </div>
