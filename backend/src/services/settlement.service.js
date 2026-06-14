@@ -174,17 +174,17 @@ export const getGroupSettlements = async (groupId) => {
     throw new AppError('Group not found.', 404);
   }
 
-  // Calculate simplified debts dynamically based on current balances
+  // 1. Calculate simplified pending debts dynamically based on current balances
   const simplifiedDebts = await simplifyDebts(groupId);
   
-  return simplifiedDebts.map((d, index) => ({
+  const virtualSettlements = simplifiedDebts.map((d, index) => ({
     id: index + 1000000, // unique virtual integer ID
     groupId,
     payerId: d.fromUserId,
     payeeId: d.toUserId,
     amount: new Prisma.Decimal(d.amount),
     currency: 'INR',
-    isCompleted: true,
+    isCompleted: false, // Outstanding/pending
     isDeleted: false,
     transactionDate: new Date(),
     payer: {
@@ -200,6 +200,38 @@ export const getGroupSettlements = async (groupId) => {
       avatarUrl: null
     }
   }));
+
+  // 2. Fetch actually recorded completed settlements from database
+  const recordedSettlements = await prisma.settlement.findMany({
+    where: {
+      groupId,
+      isDeleted: false
+    },
+    include: {
+      payer: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true
+        }
+      },
+      payee: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true
+        }
+      }
+    },
+    orderBy: {
+      transactionDate: 'desc'
+    }
+  });
+
+  // Combine both: virtual (pending) ones first, then recorded (completed) history
+  return [...virtualSettlements, ...recordedSettlements];
 };
 
 /**

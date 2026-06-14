@@ -31,7 +31,7 @@ const SettlementTable = ({ settlements = [], onDeleteClick, onSettleClick, curre
           ) : (
             settlements.map((settlement) => {
               const payerName = settlement.payer?.name || `User #${settlement.payerId}`;
-              const payeeName = settlement.payee?.name || `User #${settlement.payeeId}`;
+              const payeeName = settlement.payee?.name || settlement.receiver?.name || `User #${settlement.payeeId}`;
               
               const isPayerSelf = settlement.payerId === currentUserId;
               const isPayeeSelf = settlement.payeeId === currentUserId;
@@ -73,7 +73,22 @@ const SettlementTable = ({ settlements = [], onDeleteClick, onSettleClick, curre
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-slate-450">{formatDate(settlement.transactionDate)}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      {settlement.id >= 1000000 ? (
+                        <span className="w-fit px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          Pending
+                        </span>
+                      ) : (
+                        <span className="w-fit px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          Settled
+                        </span>
+                      )}
+                      <span className="text-slate-400 text-xs">
+                        {formatDate(settlement.transactionDate)}
+                      </span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2.5">
                       {settlement.id >= 1000000 && (
@@ -90,12 +105,14 @@ const SettlementTable = ({ settlements = [], onDeleteClick, onSettleClick, curre
                       >
                         Details
                       </Link>
-                      <button
-                        onClick={() => onDeleteClick(settlement.id)}
-                        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-800 hover:border-red-500/35 text-slate-450 hover:text-red-400 hover:bg-red-950/10 transition-all cursor-pointer"
-                      >
-                        Delete
-                      </button>
+                      {settlement.id < 1000000 && (
+                        <button
+                          onClick={() => onDeleteClick(settlement.id)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-slate-800 hover:border-red-500/35 text-slate-450 hover:text-red-400 hover:bg-red-950/10 transition-all cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
