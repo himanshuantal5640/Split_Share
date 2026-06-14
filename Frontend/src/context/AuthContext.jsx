@@ -114,6 +114,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user action
+  const updateUser = (userData) => {
+    localStorage.setItem('spit_expense_user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
   const value = {
     user,
     token,
@@ -123,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     getCurrentUser,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

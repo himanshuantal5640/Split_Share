@@ -29,12 +29,39 @@ const BalanceDetails = () => {
     fetchRecommendations(user.id).catch(console.error);
   }, [user?.id]);
 
-  const totalOwed = parseFloat(userBalances?.totalOwed || userBalances?.owed || 0);
-  const totalOwe = parseFloat(userBalances?.totalOwe || userBalances?.owes || 0);
-  const net = totalOwed - totalOwe;
-  const currency = userBalances?.currency || 'USD';
+  // Calculate total owed and total owe by aggregating group net balances
+  const groupsList = userBalances?.groupBalances || [];
+  let calculatedOwed = 0;
+  let calculatedOwe = 0;
+  groupsList.forEach(g => {
+    const bal = parseFloat(g.netBalance) || 0;
+    if (bal > 0) calculatedOwed += bal;
+    else if (bal < 0) calculatedOwe += Math.abs(bal);
+  });
 
-  const breakdown = userBreakdown?.breakdown || userBreakdown?.groups || (Array.isArray(userBreakdown) ? userBreakdown : []);
+  const totalOwed = calculatedOwed;
+  const totalOwe = calculatedOwe;
+  const net = totalOwed - totalOwe;
+  const currency = 'INR'; // Default and standardize database calculations to INR
+
+  const rawBreakdown = userBreakdown?.breakdown || userBreakdown?.groups || (Array.isArray(userBreakdown) ? userBreakdown : []);
+  const breakdown = rawBreakdown
+    .map(item => {
+      const netVal = item.summary?.finalBalance ?? item.netBalance ?? 0;
+      return {
+        group: {
+          id: item.groupId,
+          name: item.groupName,
+          description: item.groupDescription
+        },
+        netBalance: netVal,
+        currency: item.currency || 'INR',
+        owes: item.summary?.totalOwedSplits ?? 0,
+        owed: item.summary?.totalPaidExpenses ?? 0
+      };
+    })
+    .filter(item => Math.abs(parseFloat(item.netBalance)) >= 0.01);
+
   const recommendationList = recommendations?.recommendations || (Array.isArray(recommendations) ? recommendations : []);
 
   return (

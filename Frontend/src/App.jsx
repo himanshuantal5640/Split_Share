@@ -34,6 +34,8 @@ import Reports from './pages/reports/Reports';
 import ImportReport from './pages/reports/ImportReport';
 import AuditReport from './pages/reports/AuditReport';
 import SystemHealth from './pages/reports/SystemHealth';
+import Profile from './pages/profile/Profile';
+import AccountSettings from './pages/profile/AccountSettings';
 
 
 function App() {
@@ -312,6 +314,26 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <SystemHealth />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Profile />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AccountSettings />
                 </DashboardLayout>
               </ProtectedRoute>
             }

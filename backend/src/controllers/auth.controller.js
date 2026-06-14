@@ -58,9 +58,23 @@ export const search = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * Update user profile controller.
+ */
+export const updateProfile = catchAsync(async (req, res) => {
+  const updatedUser = await authService.updateUserProfile(req.user.id, req.body);
+
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: { user: updatedUser }
+  });
+});
+
 export default {
   register,
   login,
   me,
-  search
+  search,
+  updateProfile
 };

@@ -106,9 +106,53 @@ export const searchUsers = async (query = '', excludeUserId) => {
   });
 };
 
+/**
+ * Updates a user profile.
+ */
+export const updateUserProfile = async (userId, { name, email, avatarUrl, currentPassword, newPassword }) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (email && email !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new AppError('Email is already in use.', 400);
+    }
+    updateData.email = email;
+  }
+  if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+
+  if (newPassword) {
+    if (!currentPassword) {
+      throw new AppError('Current password is required to set a new password.', 400);
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new AppError('Incorrect current password.', 400);
+    }
+    const salt = await bcrypt.genSalt(10);
+    updateData.passwordHash = await bcrypt.hash(newPassword, salt);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: updateData
+  });
+
+  const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
+};
+
 export default {
   register,
   login,
   getUserProfile,
   searchUsers,
+  updateUserProfile,
 };

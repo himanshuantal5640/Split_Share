@@ -53,18 +53,18 @@ const UserMenu = () => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                alert('Profile settings will be introduced in subsequent dashboard updates!');
+                navigate('/profile');
               }}
-              className="w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-900/40 transition-colors"
+              className="w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-900/40 transition-colors cursor-pointer"
             >
               My Profile
             </button>
             <button
               onClick={() => {
                 setIsOpen(false);
-                alert('Account preferences and theme settings will be configurable soon.');
+                navigate('/settings');
               }}
-              className="w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-900/40 transition-colors"
+              className="w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-900/40 transition-colors cursor-pointer"
             >
               Account Settings
             </button>

@@ -100,6 +100,13 @@ const Settlements = () => {
     await removeSettlement(settlementId);
   };
 
+  // Calculate previously settled amount in INR (completed database records)
+  const settledSettlements = settlements.filter((s) => s.id < 1000000);
+  const totalSettledINR = settledSettlements.reduce((sum, s) => {
+    const amount = s.normalizedAmount ? parseFloat(s.normalizedAmount) : parseFloat(s.amount);
+    return sum + (isNaN(amount) ? 0 : amount);
+  }, 0);
+
   const error = groupError || settlementError;
 
   return (
@@ -131,22 +138,44 @@ const Settlements = () => {
         </div>
       )}
 
-      {/* Group Selector Dropdown */}
-      <div className="max-w-xs flex flex-col gap-2">
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Group Circle</label>
-        <select
-          value={selectedGroupId}
-          onChange={handleGroupChange}
-          disabled={loadingGroups}
-          className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
-        >
-          <option value="">-- Choose Group --</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+      {/* Group Selector & Stats Row */}
+      <div className="flex flex-col md:flex-row md:items-end gap-6">
+        <div className="max-w-xs w-full flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Group Circle</label>
+          <select
+            value={selectedGroupId}
+            onChange={handleGroupChange}
+            disabled={loadingGroups}
+            className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
+          >
+            <option value="">-- Choose Group --</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedGroupId && !loadingSettlements && (
+          <div className="p-4 rounded-xl border border-slate-900 bg-slate-950/40 backdrop-blur-md flex items-center gap-4 transition-all duration-300 hover:scale-[1.01]">
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-sans">Previously Settled Amount</span>
+              <span className="text-xl font-bold text-white tracking-tight font-sans">
+                ₹{totalSettledINR.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="pl-4 border-l border-slate-800 hidden sm:flex flex-col gap-0.5 font-sans">
+              <span className="text-[10px] font-bold text-slate-500 tracking-wider">TRANSACTIONS</span>
+              <span className="text-xs text-slate-400 font-semibold">{settledSettlements.length} completed</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Settlements Table or Empty View */}

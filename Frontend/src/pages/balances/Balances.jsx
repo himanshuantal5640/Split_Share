@@ -23,6 +23,7 @@ const Balances = () => {
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [groupError, setGroupError] = useState(null);
   const [activeTab, setActiveTab] = useState(TAB_BALANCES);
+  const activeGroup = groups.find(g => g.id.toString() === selectedGroupId);
 
   const {
     groupBalances,
@@ -80,19 +81,17 @@ const Balances = () => {
 
   // Compute summary stats from groupBalances
   const computeSummary = () => {
-    const balanceList = groupBalances?.balances || groupBalances?.netBalances || groupBalances || [];
+    const balanceList = groupBalances?.balances || groupBalances?.netBalances || (Array.isArray(groupBalances) ? groupBalances : []);
     if (!Array.isArray(balanceList) || !user?.id) return { totalOwed: 0, totalOwe: 0, net: 0 };
 
-    let totalOwed = 0;
-    let totalOwe = 0;
+    const currentUserBalance = balanceList.find((b) => b.userId === user.id);
+    if (!currentUserBalance) return { totalOwed: 0, totalOwe: 0, net: 0 };
 
-    balanceList.forEach((b) => {
-      const amt = Math.abs(parseFloat(b.amount) || 0);
-      if (b.toUser?.id === user.id) totalOwed += amt;
-      if (b.fromUser?.id === user.id) totalOwe += amt;
-    });
+    const netVal = parseFloat(currentUserBalance.netBalance) || 0;
+    const totalOwed = netVal > 0 ? netVal : 0;
+    const totalOwe = netVal < 0 ? Math.abs(netVal) : 0;
 
-    return { totalOwed, totalOwe, net: totalOwed - totalOwe };
+    return { totalOwed, totalOwe, net: netVal };
   };
 
   const { totalOwed, totalOwe, net } = computeSummary();
@@ -114,7 +113,11 @@ const Balances = () => {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Balance Dashboard"
-        subtitle="View net balances, simplified debt graphs, and smart settlement recommendations."
+        subtitle={
+          activeGroup
+            ? `Balance analysis for group circle "${activeGroup.name}".`
+            : "View net balances, simplified debt graphs, and smart settlement recommendations."
+        }
         actions={
           selectedGroupId && (
             <Link
@@ -141,19 +144,30 @@ const Balances = () => {
       )}
 
       {/* Group Selector */}
-      <div className="max-w-xs flex flex-col gap-2">
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Group Circle</label>
-        <select
-          value={selectedGroupId}
-          onChange={handleGroupChange}
-          disabled={loadingGroups}
-          className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
-        >
-          <option value="">-- Choose Group --</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>{g.name}</option>
-          ))}
-        </select>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+        <div className="max-w-xs w-full flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Group Circle</label>
+          <select
+            value={selectedGroupId}
+            onChange={handleGroupChange}
+            disabled={loadingGroups}
+            className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors"
+          >
+            <option value="">-- Choose Group --</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {selectedGroupId && activeGroup && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-950/40 backdrop-blur-md">
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Active Circle: <span className="text-slate-100 font-bold normal-case">{activeGroup.name}</span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -227,7 +241,7 @@ const Balances = () => {
                 <div className="h-48 bg-slate-900 rounded-xl" />
               </div>
             ) : activeTab === TAB_BALANCES ? (
-              <BalanceTable balances={balanceList} currentUserId={user?.id} />
+              <BalanceTable balances={balanceList} currentUserId={user?.id} currency={groupBalances?.currency || 'INR'} />
             ) : activeTab === TAB_SIMPLIFIED ? (
               <DebtSimplificationPanel
                 simplifiedDebts={simplifiedList}

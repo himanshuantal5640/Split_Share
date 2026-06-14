@@ -14,6 +14,7 @@ router.post('/login', validateBody(validateLogin), authController.login);
 
 // Current user profile route (Protected)
 router.get('/me', requireAuth, authController.me);
+router.put('/profile', requireAuth, authController.updateProfile);
 
 // Search users route (Protected)
 router.get('/users/search', requireAuth, authController.search);

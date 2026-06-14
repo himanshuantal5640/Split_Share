@@ -1,12 +1,14 @@
 import React from 'react';
+import BalanceStatusBadge from './BalanceStatusBadge';
 
 /**
- * BalanceTable - Renders a list of net balance rows between members.
+ * BalanceTable - Renders a list of net balance rows for each member of the group.
  * Props:
- *  - balances: Array of { fromUser, toUser, amount, currency }
- *  - currentUserId: number (to highlight current user's rows)
+ *  - balances: Array of individual member balances: { userId, name, email, totalPaidExpenses, totalOwedSplits, netBalance }
+ *  - currentUserId: number (to highlight current user's row)
+ *  - currency: string (default 'INR')
  */
-const BalanceTable = ({ balances = [], currentUserId }) => {
+const BalanceTable = ({ balances = [], currentUserId, currency = 'INR' }) => {
   if (balances.length === 0) {
     return (
       <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-8 rounded-2xl border border-slate-900 bg-slate-950/20 gap-3">
@@ -17,86 +19,87 @@ const BalanceTable = ({ balances = [], currentUserId }) => {
     );
   }
 
-  const formatAmount = (amount, currency = 'USD') => {
+  const formatAmount = (amount, curr = 'INR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency,
+      currency: curr,
       minimumFractionDigits: 2,
     }).format(Math.abs(parseFloat(amount)));
   };
 
-  const getUserName = (user) => {
-    if (!user) return 'Unknown';
-    return user.name || user.email || `User #${user.id}`;
-  };
-
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-900">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-xl border border-slate-900 bg-slate-950/20 backdrop-blur-sm">
+      <table className="w-full text-left border-collapse text-sm">
         <thead>
-          <tr className="border-b border-slate-900 bg-slate-950">
-            <th className="px-5 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">From</th>
-            <th className="px-5 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">To</th>
-            <th className="px-5 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Amount Owed</th>
-            <th className="px-5 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Currency</th>
+          <tr className="border-b border-slate-900 bg-slate-950/40 text-slate-400 font-semibold text-xs tracking-wider uppercase">
+            <th className="px-6 py-4">Member</th>
+            <th className="px-6 py-4">Total Paid</th>
+            <th className="px-6 py-4">Total Owed</th>
+            <th className="px-6 py-4 text-center">Status</th>
+            <th className="px-6 py-4 text-right">Net Balance</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-900/60">
+        <tbody className="divide-y divide-slate-900 text-slate-300 font-medium">
           {balances.map((row, idx) => {
-            const isCurrentPayer = row.fromUser?.id === currentUserId;
-            const isCurrentReceiver = row.toUser?.id === currentUserId;
-            const highlight = isCurrentPayer || isCurrentReceiver;
+            const isCurrentUser = row.userId === currentUserId;
+            const netBalance = parseFloat(row.netBalance || 0);
+
+            let status = 'settled';
+            let balanceColor = 'text-slate-400';
+            if (netBalance > 0.009) {
+              status = 'owed';
+              balanceColor = 'text-emerald-400';
+            } else if (netBalance < -0.009) {
+              status = 'owes';
+              balanceColor = 'text-red-400';
+            }
+
+            const initial = row.name ? row.name.charAt(0).toUpperCase() : 'U';
 
             return (
               <tr
-                key={idx}
-                className={`transition-colors ${highlight ? 'bg-indigo-950/20' : 'bg-slate-950/40 hover:bg-slate-900/40'}`}
+                key={row.userId || idx}
+                className={`transition-colors ${isCurrentUser ? 'bg-indigo-950/10' : 'hover:bg-slate-900/10'}`}
               >
-                {/* From */}
-                <td className="px-5 py-4">
+                {/* Member */}
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCurrentPayer ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
-                      {getUserName(row.fromUser).charAt(0).toUpperCase()}
+                    <div className={`w-8.5 h-8.5 rounded-lg flex items-center justify-center text-xs font-bold uppercase shrink-0 ${isCurrentUser ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
+                      {initial}
                     </div>
                     <div>
-                      <p className={`font-semibold ${isCurrentPayer ? 'text-red-300' : 'text-slate-200'}`}>
-                        {getUserName(row.fromUser)}
-                        {isCurrentPayer && <span className="ml-1.5 text-[10px] text-red-400/70 font-normal">(you)</span>}
+                      <p className="font-semibold text-slate-100 flex items-center gap-2 text-sm">
+                        {row.name || `User #${row.userId}`}
+                        {isCurrentUser && (
+                          <span className="text-[9px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
+                            You
+                          </span>
+                        )}
                       </p>
+                      <p className="text-xs text-slate-500 font-normal">{row.email}</p>
                     </div>
                   </div>
                 </td>
 
-                {/* Arrow */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCurrentReceiver ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
-                        {getUserName(row.toUser).charAt(0).toUpperCase()}
-                      </div>
-                      <p className={`font-semibold ${isCurrentReceiver ? 'text-emerald-300' : 'text-slate-200'}`}>
-                        {getUserName(row.toUser)}
-                        {isCurrentReceiver && <span className="ml-1.5 text-[10px] text-emerald-400/70 font-normal">(you)</span>}
-                      </p>
-                    </div>
-                  </div>
+                {/* Total Paid */}
+                <td className="px-6 py-4 text-slate-300 font-medium">
+                  {formatAmount(row.totalPaidExpenses || 0, currency)}
                 </td>
 
-                {/* Amount */}
-                <td className="px-5 py-4 text-right">
-                  <span className="font-bold text-base text-amber-400">
-                    {formatAmount(row.amount, row.currency)}
-                  </span>
+                {/* Total Owed */}
+                <td className="px-6 py-4 text-slate-400">
+                  {formatAmount(row.totalOwedSplits || 0, currency)}
                 </td>
 
-                {/* Currency */}
-                <td className="px-5 py-4 text-center">
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 font-semibold tracking-wider">
-                    {row.currency || 'USD'}
-                  </span>
+                {/* Status */}
+                <td className="px-6 py-4 text-center">
+                  <BalanceStatusBadge status={status} />
+                </td>
+
+                {/* Net Balance */}
+                <td className={`px-6 py-4 text-right font-extrabold text-base ${balanceColor}`}>
+                  {netBalance > 0.009 ? '+' : ''}
+                  {formatAmount(netBalance, currency)}
                 </td>
               </tr>
             );
