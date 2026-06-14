@@ -19,6 +19,15 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Logout action
+  const logout = () => {
+    localStorage.removeItem('spit_expense_token');
+    localStorage.removeItem('spit_expense_user');
+    setToken(null);
+    setUser(null);
+    console.log('User logged out successfully.');
+  };
+
   // Helper to fetch current user profile from the server
   const getCurrentUser = async () => {
     try {
@@ -103,15 +112,6 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Logout action
-  const logout = () => {
-    localStorage.removeItem('spit_expense_token');
-    localStorage.removeItem('spit_expense_user');
-    setToken(null);
-    setUser(null);
-    console.log('User logged out successfully.');
   };
 
   const value = {

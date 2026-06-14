@@ -83,8 +83,32 @@ export const getUserProfile = async (userId) => {
   const { passwordHash: _, ...userWithoutPassword } = user;
   return userWithoutPassword;
 };
+
+/**
+ * Search users by name or email.
+ */
+export const searchUsers = async (query = '', excludeUserId) => {
+  return await prisma.user.findMany({
+    where: {
+      OR: query ? [
+        { name: { contains: query } },
+        { email: { contains: query } }
+      ] : undefined,
+      NOT: excludeUserId ? { id: excludeUserId } : undefined
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatarUrl: true
+    },
+    take: 20
+  });
+};
+
 export default {
   register,
   login,
-  getUserProfile
+  getUserProfile,
+  searchUsers,
 };

@@ -37,8 +37,35 @@ export const getImportDetails = async (importId) => {
   return res.data.data.import;
 };
 
+/**
+ * Process all approved rows of an import to generate expenses/settlements.
+ */
+export const processImport = async (importId) => {
+  const res = await api.post(`/imports/${importId}/process`);
+  return res.data.data.report;
+};
+
+/**
+ * Get import processing status.
+ */
+export const getProcessingStatus = async (importId) => {
+  const res = await api.get(`/imports/${importId}/status`);
+  return res.data.data.status;
+};
+
+/**
+ * Get detailed import processing report.
+ */
+export const getProcessingReport = async (importId) => {
+  const res = await api.get(`/imports/${importId}/process-report`);
+  return res.data.data.report;
+};
+
 export default {
   uploadCsv,
   listImports,
   getImportDetails,
+  processImport,
+  getProcessingStatus,
+  getProcessingReport,
 };

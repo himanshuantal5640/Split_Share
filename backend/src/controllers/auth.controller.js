@@ -45,8 +45,22 @@ export const me = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * Search users.
+ */
+export const search = catchAsync(async (req, res) => {
+  const query = req.query.q || '';
+  const users = await authService.searchUsers(query, req.user.id);
+
+  res.status(200).json({
+    success: true,
+    data: { users }
+  });
+});
+
 export default {
   register,
   login,
-  me
+  me,
+  search
 };

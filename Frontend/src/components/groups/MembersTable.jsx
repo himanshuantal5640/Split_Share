@@ -3,7 +3,7 @@ import React from 'react';
 // Formats date nicely
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString(undefined, {
+  return new Date(dateString).toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });

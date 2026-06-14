@@ -38,7 +38,16 @@ const ImportRowsTable = ({ rows = [] }) => {
             </tr>
           ) : (
             rows.map((row) => {
-              const raw = row.rawContent || {};
+              let raw = {};
+              try {
+                if (typeof row.rawContent === 'string') {
+                  raw = JSON.parse(row.rawContent);
+                } else if (row.rawContent && typeof row.rawContent === 'object') {
+                  raw = row.rawContent;
+                }
+              } catch (e) {
+                console.error("Failed to parse row.rawContent JSON string", e);
+              }
               const desc = getField(raw, ['description', 'desc', 'title', 'item']);
               const amount = getField(raw, ['amount', 'sum', 'total', 'cost']);
               const category = getField(raw, ['category', 'cat', 'type']);

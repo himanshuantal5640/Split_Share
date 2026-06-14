@@ -5,12 +5,17 @@ import React from 'react';
  */
 export const isUserActiveOnDate = (member, targetDate) => {
   if (!targetDate) return true;
-  const checkTime = new Date(targetDate).getTime();
-  const joinedTime = new Date(member.joinedAt).getTime();
-  if (checkTime < joinedTime) return false;
-  if (member.leftAt) {
-    const leftTime = new Date(member.leftAt).getTime();
-    if (checkTime > leftTime) return false;
+  try {
+    const txStr = new Date(targetDate).toISOString().split('T')[0];
+    const joinStr = new Date(member.joinedAt).toISOString().split('T')[0];
+    if (txStr < joinStr) return false;
+    if (member.leftAt) {
+      const leaveStr = new Date(member.leftAt).toISOString().split('T')[0];
+      if (txStr > leaveStr) return false;
+    }
+  } catch (err) {
+    console.error('Error comparing dates:', err);
+    return true; // Default fallback to active if date parsing fails
   }
   return true;
 };

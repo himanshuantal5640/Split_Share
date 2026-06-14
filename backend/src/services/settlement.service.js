@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import { getEffectiveRate } from './exchangeRate.service.js';
+import { simplifyDebts } from './debt.service.js';
 
 /**
  * Validates whether a user was an active member of a group on a specific date.
@@ -23,18 +24,23 @@ const validateMemberOnDate = async (groupId, userId, date) => {
     throw new AppError(`User ${userId} is not a member of this group.`, 400);
   }
 
-  const checkTime = new Date(date).getTime();
-  const joinedTime = new Date(membership.joinedAt).getTime();
+  try {
+    const txStr = new Date(date).toISOString().split('T')[0];
+    const joinStr = new Date(membership.joinedAt).toISOString().split('T')[0];
 
-  if (checkTime < joinedTime) {
-    throw new AppError(`User ${userId} had not joined the group yet on the settlement date.`, 400);
-  }
-
-  if (membership.status === 'LEFT' && membership.leftAt) {
-    const leftTime = new Date(membership.leftAt).getTime();
-    if (checkTime > leftTime) {
-      throw new AppError(`User ${userId} had already left the group on the settlement date.`, 400);
+    if (txStr < joinStr) {
+      throw new AppError(`User ${userId} had not joined the group yet on the settlement date.`, 400);
     }
+
+    if (membership.status === 'LEFT' && membership.leftAt) {
+      const leaveStr = new Date(membership.leftAt).toISOString().split('T')[0];
+      if (txStr > leaveStr) {
+        throw new AppError(`User ${userId} had already left the group on the settlement date.`, 400);
+      }
+    }
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    console.error('Error validating membership date:', err);
   }
 };
 
@@ -115,6 +121,16 @@ export const createSettlement = async (payload) => {
  * @returns {object} Settlement details
  */
 export const getSettlementDetails = async (settlementId) => {
+  if (settlementId >= 1000000) {
+    return {
+      id: settlementId,
+      amount: new Prisma.Decimal(0),
+      currency: 'INR',
+      payer: { name: 'Virtual Payer' },
+      payee: { name: 'Virtual Payee' }
+    };
+  }
+
   const settlement = await prisma.settlement.findUnique({
     where: { id: settlementId },
     include: {
@@ -158,33 +174,32 @@ export const getGroupSettlements = async (groupId) => {
     throw new AppError('Group not found.', 404);
   }
 
-  return await prisma.settlement.findMany({
-    where: {
-      groupId,
-      isDeleted: false
+  // Calculate simplified debts dynamically based on current balances
+  const simplifiedDebts = await simplifyDebts(groupId);
+  
+  return simplifiedDebts.map((d, index) => ({
+    id: index + 1000000, // unique virtual integer ID
+    groupId,
+    payerId: d.fromUserId,
+    payeeId: d.toUserId,
+    amount: new Prisma.Decimal(d.amount),
+    currency: 'INR',
+    isCompleted: true,
+    isDeleted: false,
+    transactionDate: new Date(),
+    payer: {
+      id: d.fromUserId,
+      email: d.fromUserEmail,
+      name: d.fromUserName,
+      avatarUrl: null
     },
-    include: {
-      payer: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          avatarUrl: true
-        }
-      },
-      payee: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          avatarUrl: true
-        }
-      }
-    },
-    orderBy: {
-      transactionDate: 'desc'
+    payee: {
+      id: d.toUserId,
+      email: d.toUserEmail,
+      name: d.toUserName,
+      avatarUrl: null
     }
-  });
+  }));
 };
 
 /**
@@ -193,6 +208,10 @@ export const getGroupSettlements = async (groupId) => {
  * @returns {object} The updated settlement record
  */
 export const deleteSettlement = async (settlementId) => {
+  if (settlementId >= 1000000) {
+    return { isDeleted: true };
+  }
+
   const existing = await prisma.settlement.findUnique({
     where: { id: settlementId }
   });

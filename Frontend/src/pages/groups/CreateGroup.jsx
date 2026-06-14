@@ -13,8 +13,14 @@ const CreateGroup = () => {
     setLoading(true);
     setError(null);
     try {
-      await createGroup(groupData);
-      navigate('/groups');
+      const group = await createGroup({
+        name: groupData.name,
+        description: groupData.description,
+        memberIds: groupData.memberIds
+      });
+      
+      // Navigate to the details page of the newly created group circle
+      navigate(`/groups/${group.id}`);
     } catch (err) {
       console.error(err);
       setError(

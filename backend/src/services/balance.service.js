@@ -20,18 +20,23 @@ const toDecimal = (val) => {
  * @returns {boolean} True if transaction occurred during active membership
  */
 const isTransactionWithinMembership = (transactionDate, joinedAt, leftAt) => {
-  const txTime = new Date(transactionDate).getTime();
-  const joinTime = new Date(joinedAt).getTime();
-  
-  if (txTime < joinTime) {
-    return false;
-  }
-  
-  if (leftAt) {
-    const leaveTime = new Date(leftAt).getTime();
-    if (txTime > leaveTime) {
+  try {
+    const txStr = new Date(transactionDate).toISOString().split('T')[0];
+    const joinStr = new Date(joinedAt).toISOString().split('T')[0];
+    
+    if (txStr < joinStr) {
       return false;
     }
+    
+    if (leftAt) {
+      const leaveStr = new Date(leftAt).toISOString().split('T')[0];
+      if (txStr > leaveStr) {
+        return false;
+      }
+    }
+  } catch (err) {
+    console.error('Error checking balance date intervals:', err);
+    return true; // Default fallback to active if date parsing fails
   }
   
   return true;

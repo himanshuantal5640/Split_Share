@@ -7,7 +7,7 @@ import { AppError } from '../utils/errors.js';
  * @param {number} creatorId - ID of user creating the group
  * @returns {object} The created group object
  */
-export const createGroup = async ({ name, description }, creatorId) => {
+export const createGroup = async ({ name, description, memberIds = [] }, creatorId) => {
   return await prisma.$transaction(async (tx) => {
     // 1. Create the Group
     const group = await tx.group.create({
@@ -25,6 +25,27 @@ export const createGroup = async ({ name, description }, creatorId) => {
         status: 'ACTIVE'
       }
     });
+
+    // 3. Add other members
+    for (const memberId of memberIds) {
+      const parsedId = parseInt(memberId, 10);
+      if (isNaN(parsedId) || parsedId === creatorId) continue;
+      
+      // Make sure the user exists first (optional check but good practice)
+      const userExists = await tx.user.findUnique({
+        where: { id: parsedId }
+      });
+      
+      if (userExists) {
+        await tx.groupMembership.create({
+          data: {
+            groupId: group.id,
+            userId: parsedId,
+            status: 'ACTIVE'
+          }
+        });
+      }
+    }
 
     return group;
   });

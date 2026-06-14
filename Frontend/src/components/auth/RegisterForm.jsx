@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { addGroupMember } from '../../api/groupApi';
 
 const RegisterForm = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteEmail = searchParams.get('inviteEmail') || '';
+  const inviteGroupId = searchParams.get('inviteGroupId') || '';
+
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
@@ -45,7 +50,20 @@ const RegisterForm = () => {
 
     setLoading(true);
     try {
-      await register(name.trim(), email.trim(), password);
+      const regResult = await register(name.trim(), email.trim(), password);
+      if (inviteGroupId) {
+        try {
+          const userStr = localStorage.getItem('spit_expense_user');
+          const user = userStr ? JSON.parse(userStr) : regResult?.user;
+          if (user && user.id) {
+            await addGroupMember(parseInt(inviteGroupId, 10), user.id);
+            navigate(`/groups/${inviteGroupId}`);
+            return;
+          }
+        } catch (inviteErr) {
+          console.error('Failed to automatically join group circle:', inviteErr);
+        }
+      }
       navigate('/dashboard');
     } catch (err) {
       console.error(err);

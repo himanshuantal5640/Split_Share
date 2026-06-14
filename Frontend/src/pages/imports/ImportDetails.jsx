@@ -8,10 +8,13 @@ import { useAnomalies } from '../../hooks/useAnomalies';
 
 const ImportDetails = () => {
   const { importId } = useParams();
-  const { fetchImportDetails, loading, error } = useImports();
+  const { fetchImportDetails, processImportJob, loading, error } = useImports();
   const { fetchImportAnomalies, analyzeImport, loading: anomalyLoading } = useAnomalies();
   const [importData, setImportData] = useState(null);
   const [anomaliesList, setAnomaliesList] = useState([]);
+  const [processing, setProcessing] = useState(false);
+  const [processSuccess, setProcessSuccess] = useState(null);
+  const [processingError, setProcessingError] = useState(null);
 
   const loadAnomalies = async () => {
     try {
@@ -40,6 +43,22 @@ const ImportDetails = () => {
       loadDetails();
     } catch (err) {
       console.error('Failed to analyze anomalies', err);
+    }
+  };
+
+  const handleProcess = async () => {
+    setProcessing(true);
+    setProcessingError(null);
+    setProcessSuccess(null);
+    try {
+      const report = await processImportJob(parseInt(importId, 10));
+      setProcessSuccess(report);
+      loadDetails();
+    } catch (err) {
+      console.error(err);
+      setProcessingError(err.response?.data?.message || 'Failed to process import ledger.');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -152,6 +171,29 @@ const ImportDetails = () => {
         </div>
       )}
 
+      {processingError && (
+        <div className="p-4 rounded-xl border border-red-500/20 bg-red-950/20 text-red-400 text-sm leading-relaxed max-w-4xl flex items-start gap-2.5">
+          <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>{processingError}</span>
+        </div>
+      )}
+
+      {processSuccess && (
+        <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-950/20 text-emerald-400 text-sm leading-relaxed max-w-4xl flex items-start gap-2.5">
+          <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex flex-col gap-1">
+            <span className="font-bold">Ledger processed successfully!</span>
+            <span className="text-xs text-emerald-500/90">
+              Generated {processSuccess.statistics?.expensesGeneratedCount || 0} expenses and {processSuccess.statistics?.settlementsGeneratedCount || 0} peer settlements.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Anomaly Audit Panel */}
       {importData.status === 'COMPLETED' && (
         <div className="p-6 rounded-2xl border border-slate-900 bg-slate-950/40 backdrop-blur-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
@@ -170,31 +212,44 @@ const ImportDetails = () => {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {anomaliesList.length > 0 ? (
-              <>
-                <Link
-                  to={`/imports/${importId}/resolution-report`}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-white transition-colors"
-                >
-                  Resolution Report
-                </Link>
-                {anomaliesList.some(a => a.status === 'PENDING') && (
-                  <Link
-                    to="/anomalies"
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/10 transition-colors"
-                  >
-                    Review Queue
-                  </Link>
-                )}
-              </>
-            ) : (
+            {/* Always show Run Analysis button as a secondary action if there are no pending anomalies */}
+            <button
+              onClick={handleAnalyze}
+              disabled={anomalyLoading || processing}
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-800 hover:border-slate-700 text-slate-450 hover:text-white transition-colors cursor-pointer disabled:opacity-55"
+            >
+              {anomalyLoading ? 'Analyzing...' : 'Run Analysis'}
+            </button>
+
+            {/* Show Process Ledger button if there are no pending anomalies */}
+            {!anomaliesList.some(a => a.status === 'PENDING') && (
               <button
-                onClick={handleAnalyze}
-                disabled={anomalyLoading}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-500/50 text-white shadow-lg shadow-indigo-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                onClick={handleProcess}
+                disabled={processing || anomalyLoading}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/10 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-55"
               >
-                {anomalyLoading ? 'Analyzing...' : 'Run Analysis'}
+                {processing ? 'Processing...' : 'Process Ledger'}
               </button>
+            )}
+
+            {/* Show Review Queue if there are pending anomalies */}
+            {anomaliesList.some(a => a.status === 'PENDING') && (
+              <Link
+                to="/anomalies"
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/10 transition-colors"
+              >
+                Review Queue
+              </Link>
+            )}
+
+            {/* Show Resolution Report if there are anomalies */}
+            {anomaliesList.length > 0 && (
+              <Link
+                to={`/imports/${importId}/resolution-report`}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-white transition-colors"
+              >
+                Resolution Report
+              </Link>
             )}
           </div>
         </div>

@@ -1,9 +1,48 @@
 import React, { useState } from 'react';
+import api from '../../api/axios';
 
 const GroupForm = ({ onSubmit, initialData = {}, loading = false, error = null }) => {
   const [name, setName] = useState(initialData.name || '');
   const [description, setDescription] = useState(initialData.description || '');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [validationError, setValidationError] = useState(null);
+
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const res = await api.get(`/auth/users/search?q=${encodeURIComponent(query)}`);
+      if (res.data && res.data.success) {
+        setSearchResults(res.data.data.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to search users:', err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectMember = (user) => {
+    if (selectedMembers.some((m) => m.id === user.id)) {
+      setSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
+    setSelectedMembers([...selectedMembers, user]);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleRemoveMember = (userId) => {
+    setSelectedMembers(selectedMembers.filter((m) => m.id !== userId));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,6 +56,7 @@ const GroupForm = ({ onSubmit, initialData = {}, loading = false, error = null }
     onSubmit({
       name: name.trim(),
       description: description.trim(),
+      memberIds: selectedMembers.map((m) => m.id),
     });
   };
 
@@ -54,6 +94,67 @@ const GroupForm = ({ onSubmit, initialData = {}, loading = false, error = null }
           rows={4}
           className="w-full px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed resize-none"
         />
+      </div>
+
+      <div className="flex flex-col gap-2 relative">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Add Group Members</label>
+        
+        {/* Selected Members Chips */}
+        {selectedMembers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {selectedMembers.map((member) => (
+              <span
+                key={member.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+              >
+                {member.name} ({member.email})
+                <button
+                  type="button"
+                  onClick={() => handleRemoveMember(member.id)}
+                  className="text-indigo-400 hover:text-indigo-200 transition-colors focus:outline-none cursor-pointer"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          disabled={loading}
+          placeholder="Search by name or email address..."
+          className="w-full px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+
+        {/* Search Results Dropdown */}
+        {searchResults.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 shadow-2xl z-50 p-2 flex flex-col gap-1">
+            {searchResults.map((user) => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => handleSelectMember(user)}
+                className="w-full text-left px-3.5 py-2.5 rounded-lg text-xs font-semibold text-slate-405 hover:text-slate-100 hover:bg-slate-900/40 transition-colors flex justify-between items-center cursor-pointer"
+              >
+                <span>{user.name} ({user.email})</span>
+                <span className="text-[10px] text-indigo-400 font-bold uppercase">Add</span>
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {searchQuery && searchResults.length === 0 && !searchLoading && (
+          <div className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-center text-xs text-slate-500 z-50">
+            No users found matching "{searchQuery}"
+          </div>
+        )}
+
+        <span className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+          * Search for existing users in the system to add them directly to this group.
+        </span>
       </div>
 
       <button

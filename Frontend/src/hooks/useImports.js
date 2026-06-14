@@ -53,6 +53,21 @@ export const useImports = () => {
     }
   }, []);
 
+  const processImportJob = useCallback(async (importId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const report = await importApi.processImport(importId);
+      return report;
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to process import ledger.');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     imports,
     loading,
@@ -60,6 +75,7 @@ export const useImports = () => {
     fetchImports,
     fetchImportDetails,
     uploadImport,
+    processImportJob,
   };
 };
 

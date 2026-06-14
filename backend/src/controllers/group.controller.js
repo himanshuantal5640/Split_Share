@@ -18,8 +18,8 @@ const parseIdParam = (paramName, paramVal) => {
  * Create a new group.
  */
 export const create = catchAsync(async (req, res) => {
-  const { name, description } = req.body;
-  const group = await groupService.createGroup({ name, description }, req.user.id);
+  const { name, description, memberIds } = req.body;
+  const group = await groupService.createGroup({ name, description, memberIds }, req.user.id);
 
   res.status(201).json({
     success: true,

@@ -38,6 +38,7 @@ const GroupDetails = () => {
   };
 
   useEffect(() => {
+    setGroup(null);
     fetchDetails();
   }, [groupId]);
 
@@ -65,7 +66,7 @@ const GroupDetails = () => {
     );
   }
 
-  if (error && !group) {
+  if (error) {
     return (
       <div className="p-6 rounded-2xl border border-red-500/20 bg-red-950/20 text-red-400 text-sm leading-relaxed max-w-2xl flex flex-col gap-4">
         <span>{error}</span>
@@ -74,6 +75,10 @@ const GroupDetails = () => {
         </Link>
       </div>
     );
+  }
+
+  if (!group) {
+    return null;
   }
 
   return (
