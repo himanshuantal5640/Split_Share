@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://split-share-ten.vercel.app/" // Replace this with your actual Vercel/Netlify URL when deployed
+    "https://split-share-ten.vercel.app" // Removed trailing slash here
   ],
   credentials: true
 }));
