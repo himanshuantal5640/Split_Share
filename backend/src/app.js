@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://split-share-ten.vercel.app" // Removed trailing slash here
+    "https://split-share-ten.vercel.app"
   ],
   credentials: true
 }));
