@@ -27,7 +27,13 @@ const app = express();
 app.use(helmet());
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://your-vercel-app.vercel.app" // Replace this with your actual Vercel/Netlify URL when deployed
+  ],
+  credentials: true
+}));
 
 // HTTP request logger middleware
 if (env.nodeEnv === 'development') {
